@@ -87,22 +87,83 @@ def depthFirstSearch(problem: SearchProblem):
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    #util.raiseNotDefined()
+
+    from util import Stack
+
+    fringe = Stack()
+    visit = set()
+    fringe.push([problem.getStartState(), list()])
+
+    while not fringe.isEmpty():
+        node = fringe.pop()
+        if problem.isGoalState(node[0]):
+            return node[1]
+        if node[0] not in visit:
+            visit.add(node[0])
+            for nextTuple in problem.getSuccessors(node[0]):
+                fringe.push([nextTuple[0], node[1] + [nextTuple[1]]])
+    return None
+
+
+
+
+
+
+
+
+
 
 def breadthFirstSearch(problem: SearchProblem):
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    from util import Queue
+
+    fringe = Queue()
+    visit = set()
+    fringe.push([problem.getStartState(), list()])
+
+    while not fringe.isEmpty():
+        node = fringe.pop()
+        if problem.isGoalState(node[0]):
+            return node[1]
+        if node[0] not in visit:
+            visit.add(node[0])
+            for next in problem.getSuccessors(node[0]):
+                fringe.push([next[0], node[1] + [next[1]]])
+
+    return None
+
 
 def uniformCostSearch(problem: SearchProblem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    from util import PriorityQueue
+
+    fringe = PriorityQueue()
+    visit = set()
+
+    fringe.push([problem.getStartState(), list(), 0], 0)
+
+    while not fringe.isEmpty():
+        node = fringe.pop()
+        if problem.isGoalState(node[0]):
+            return node[1]
+        if node[0] not in visit:
+            visit.add(node[0])
+            for next in problem.getSuccessors(node[0]):
+                fringe.push([next[0], node[1] + [next[1]] , next[2] + node[2]],
+                            next[2] + node[2])
+
+    return None
+
+
+
 
 def nullHeuristic(state, problem=None):
     """
     A heuristic function estimates the cost from the current state to the nearest
-    goal in the provided SearchProblem.  This heuristic is trivial.
+    goal in the provided SearchProble.  This heuristic is trivial.
     """
     return 0
 
