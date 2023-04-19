@@ -529,12 +529,7 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     heuristic = 0
     if count != 0:
         nowstate = AStarFoodState(position, foodGrid, problem.walls)
-        heuristic = len(search.astar(PositionSearchProblem(nowstate, start=(minrow, mincol), goal=(maxrow, maxcol), warn=False, visualize=False), manhattanHeuristic))
-        heuristic += min(
-            len(search.astar(PositionSearchProblem(nowstate, start=position, goal=(minrow, mincol), warn=False, visualize=False), manhattanHeuristic)),
-            len(search.astar(PositionSearchProblem(nowstate, start=position, goal=(maxrow, maxcol), warn=False, visualize=False),manhattanHeuristic))
-        )
-
+        heuristic = mazeDistance(position, (minrow, mincol), nowstate) + count - 1
     return heuristic
 
 class ClosestDotSearchAgent(SearchAgent):
