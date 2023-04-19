@@ -72,6 +72,18 @@ def tinyMazeSearch(problem):
     w = Directions.WEST
     return  [s, s, w, s, w, w, s, w]
 
+
+
+def constructPath(state, path: dict, prev: dict) -> list:
+    returnL = list()
+    while prev[state] != state:
+        print(f"{state} -> {prev[state]}")
+        returnL.append(path[state])
+        state = prev[state]
+    returnL.reverse()
+    return returnL
+
+
 def depthFirstSearch(problem: SearchProblem):
     """
     Search the deepest nodes in the search tree first.
@@ -93,23 +105,28 @@ def depthFirstSearch(problem: SearchProblem):
 
     fringe = Stack()
     visit = set()
-    fringe.push([problem.getStartState(), list()])
+    path = dict()
+    prev = dict()
+
+    # (current state, action from previous state to current state, previous state)
+    fringe.push((problem.getStartState(), None, problem.getStartState()))
 
     while not fringe.isEmpty():
         node = fringe.pop()
         if problem.isGoalState(node[0]):
-            return node[1]
+            prev[node[0]] = node[2]
+            path[node[0]] = node[1]
+            return constructPath(node[0], path, prev)
+
         if node[0] not in visit:
             visit.add(node[0])
-            for nextTuple in problem.getSuccessors(node[0]):
-                fringe.push([nextTuple[0], node[1] + [nextTuple[1]]])
+            prev[node[0]] = node[2]
+            path[node[0]] = node[1]
+
+            for nextState, direct, _ in problem.getSuccessors(node[0]):
+                fringe.push((nextState, direct, node[0]))
+
     return None
-
-
-
-
-
-
 
 
 
@@ -121,16 +138,25 @@ def breadthFirstSearch(problem: SearchProblem):
 
     fringe = Queue()
     visit = set()
-    fringe.push([problem.getStartState(), list()])
+    path = dict()
+    prev = dict()
+
+    # (current state, action from previous state to current state, previous state)
+    fringe.push((problem.getStartState(), None, problem.getStartState()))
 
     while not fringe.isEmpty():
         node = fringe.pop()
         if problem.isGoalState(node[0]):
-            return node[1]
+            prev[node[0]] = node[2]
+            path[node[0]] = node[1]
+            return constructPath(node[0], path, prev)
+
         if node[0] not in visit:
             visit.add(node[0])
-            for next in problem.getSuccessors(node[0]):
-                fringe.push([next[0], node[1] + [next[1]]])
+            prev[node[0]] = node[2]
+            path[node[0]] = node[1]
+            for nextState, direct, _ in problem.getSuccessors(node[0]):
+                fringe.push((nextState, direct, node[0]))
 
     return None
 
@@ -142,18 +168,25 @@ def uniformCostSearch(problem: SearchProblem):
 
     fringe = PriorityQueue()
     visit = set()
+    prev = dict()
+    path = dict()
 
-    fringe.push([problem.getStartState(), list(), 0], 0)
+    # (current state, action from previous state to current state, backward cost, previous state)
+    fringe.push((problem.getStartState(), None, 0, problem.getStartState()), 0)
 
     while not fringe.isEmpty():
         node = fringe.pop()
         if problem.isGoalState(node[0]):
-            return node[1]
+            prev[node[0]] = node[3]
+            path[node[0]] = node[1]
+            return constructPath(node[0], path, prev)
+
         if node[0] not in visit:
             visit.add(node[0])
-            for next in problem.getSuccessors(node[0]):
-                fringe.push([next[0], node[1] + [next[1]] , next[2] + node[2]],
-                            next[2] + node[2])
+            prev[node[0]] = node[3]
+            path[node[0]] = node[1]
+            for nextState, direct, cost in problem.getSuccessors(node[0]):
+                fringe.push((nextState, direct, cost + node[2], node[0]), cost + node[2])
 
     return None
 
