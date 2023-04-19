@@ -77,7 +77,6 @@ def tinyMazeSearch(problem):
 def constructPath(state, path: dict, prev: dict) -> list:
     returnL = list()
     while prev[state] != state:
-        print(f"{state} -> {prev[state]}")
         returnL.append(path[state])
         state = prev[state]
     returnL.reverse()
@@ -203,7 +202,40 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    from util import PriorityQueue
+    fringe = PriorityQueue()
+    visit = set()
+    prev = dict()
+    path = dict()
+
+    # (current state, action from previous state to current state, backward cost, previous state)
+    # priority num is backward cost + heuristic
+    initstate = problem.getStartState()
+    fringe.push((initstate, None, 0, initstate), heuristic(initstate, problem))
+
+    prev[problem.getStartState()] = problem.getStartState()
+
+    while not fringe.isEmpty():
+        node = fringe.pop()
+
+        if problem.isGoalState(node[0]):
+            prev[node[0]] = node[3]
+            path[node[0]] = node[1]
+            return constructPath(node[0], path, prev)
+
+        if node[0] not in visit:
+            visit.add(node[0])
+            prev[node[0]] = node[3]
+            path[node[0]] = node[1]
+
+            for nextState, direction, cost in problem.getSuccessors(node[0]):
+                cost += node[2]
+                fringe.push((nextState, direction, cost, node[0]), cost + heuristic(nextState, problem))
+
+
+    return None
+
+
 
 
 # Abbreviations

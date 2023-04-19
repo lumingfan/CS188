@@ -270,6 +270,7 @@ def euclideanHeuristic(position, problem, info={}):
 # This portion is incomplete.  Time to write code!  #
 #####################################################
 
+
 class CornersProblem(search.SearchProblem):
     """
     This search problem finds paths through all four corners of a layout.
@@ -296,14 +297,18 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return tuple((self.startingPosition, (True, True, True, True)))
 
     def isGoalState(self, state: Any):
         """
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        for food in state[1]:
+            if food:
+                return False
+        return True
+
 
     def getSuccessors(self, state: Any):
         """
@@ -326,6 +331,17 @@ class CornersProblem(search.SearchProblem):
             #   hitsWall = self.walls[nextx][nexty]
 
             "*** YOUR CODE HERE ***"
+
+            x, y = state[0]
+            food = [*state[1]]
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty= int(x + dx), int(y + dy)
+            if not self.walls[nextx][nexty]:
+                for idx in range(len(self.corners)):
+                    if (nextx, nexty) == self.corners[idx]:
+                        food[idx] = False
+                nextstate = tuple(((nextx, nexty), tuple(food)))
+                successors.append((nextstate, action, 1))
 
         self._expanded += 1 # DO NOT CHANGE
         return successors
@@ -361,7 +377,13 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    heuristic = 0
+    idx = 0
+    for food in state[1]:
+        if food:
+            heuristic = max(heuristic, abs(state[0][0] - corners[idx][0]) + abs(state[0][1] - corners[idx][1]))
+        idx += 1
+    return heuristic # Default to trivial solution
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -419,6 +441,31 @@ class FoodSearchProblem:
             cost += 1
         return cost
 
+
+class AStarFoodState:
+    def __init__(self, pos: Tuple, food: List[List], wall):
+        self.pos = pos
+        self.food = food
+        self.wall = wall
+
+    def getWalls(self):
+        return self.wall
+
+    def getPacmanPosition(self):
+        return self.pos
+
+    def getNumFood(self):
+        cnt = 0
+        for f in self.food.asList():
+            if f:
+                cnt += 1
+
+        return cnt
+
+    def hasFood(self, x: int, y: int):
+        return self.food[x][y]
+
+
 class AStarFoodSearchAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
     def __init__(self):
@@ -455,7 +502,40 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+    heuristicmax = 0
+    heuristicmin = 99999
+    count = 0
+    maxrow = 0
+    maxcol = 0
+    minrow = 0
+    mincol = 0
+
+
+    for row in range(foodGrid.width):
+        for col in range(foodGrid.height):
+            if foodGrid[row][col]:
+                count += 1
+                dis = abs(position[0] - row) + abs(position[1] - col)
+                if dis > heuristicmax:
+                    maxrow = row
+                    maxcol = col
+                    heuristicmax = dis
+                if dis < heuristicmin:
+                    minrow = row
+                    mincol = col
+                    heuristicmin = dis
+
+
+    heuristic = 0
+    if count != 0:
+        nowstate = AStarFoodState(position, foodGrid, problem.walls)
+        heuristic = len(search.astar(PositionSearchProblem(nowstate, start=(minrow, mincol), goal=(maxrow, maxcol), warn=False, visualize=False), manhattanHeuristic))
+        heuristic += min(
+            len(search.astar(PositionSearchProblem(nowstate, start=position, goal=(minrow, mincol), warn=False, visualize=False), manhattanHeuristic)),
+            len(search.astar(PositionSearchProblem(nowstate, start=position, goal=(maxrow, maxcol), warn=False, visualize=False),manhattanHeuristic))
+        )
+
+    return heuristic
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
