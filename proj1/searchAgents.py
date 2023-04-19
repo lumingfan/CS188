@@ -502,11 +502,8 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    heuristicmax = 0
     heuristicmin = 99999
     count = 0
-    maxrow = 0
-    maxcol = 0
     minrow = 0
     mincol = 0
 
@@ -516,10 +513,6 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
             if foodGrid[row][col]:
                 count += 1
                 dis = abs(position[0] - row) + abs(position[1] - col)
-                if dis > heuristicmax:
-                    maxrow = row
-                    maxcol = col
-                    heuristicmax = dis
                 if dis < heuristicmin:
                     minrow = row
                     mincol = col
