@@ -508,6 +508,7 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     mincol = 0
 
 
+    # @ref: https://stackoverflow.com/questions/9994913/pacman-what-kinds-of-heuristics-are-mainly-used
     for row in range(foodGrid.width):
         for col in range(foodGrid.height):
             if foodGrid[row][col]:
