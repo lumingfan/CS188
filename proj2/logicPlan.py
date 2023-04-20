@@ -50,7 +50,10 @@ def sentence1() -> Expr:
     (not A) or (not B) or C
     """
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    A = Expr("A")
+    B = Expr("B")
+    C = Expr("C")
+    return conjoin(A | B, ~A % (~B | C), disjoin(~A, ~B, C))
     "*** END YOUR CODE HERE ***"
 
 
@@ -63,7 +66,11 @@ def sentence2() -> Expr:
     (not D) implies C
     """
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    A = Expr("A")
+    B = Expr("B")
+    C = Expr("C")
+    D = Expr("D")
+    return conjoin(C % (B | D), A >> (~B & ~D), ~(B & ~C) >> A, ~D >> C)
     "*** END YOUR CODE HERE ***"
 
 
@@ -80,7 +87,14 @@ def sentence3() -> Expr:
     Pacman is born at time 0.
     """
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    PacmanAlive_1 = PropSymbolExpr("PacmanAlive", time=1)
+    PacmanAlive_0 = PropSymbolExpr("PacmanAlive", time=0)
+    PacmanBorn_0 = PropSymbolExpr("PacmanBorn", time=0)
+    PacmanKilled_0 = PropSymbolExpr("PacmanKilled", time=0)
+
+    return conjoin(PacmanAlive_1 % ((PacmanAlive_0 & ~PacmanKilled_0) | (~PacmanAlive_0 & PacmanBorn_0)),
+                   ~(PacmanAlive_0 & PacmanBorn_0),
+                   PacmanBorn_0)
     "*** END YOUR CODE HERE ***"
 
 def findModel(sentence: Expr) -> Dict[Expr, bool]:
@@ -90,6 +104,13 @@ def findModel(sentence: Expr) -> Dict[Expr, bool]:
     cnf_sentence = to_cnf(sentence)
     return pycoSAT(cnf_sentence)
 
+class Mystr:
+    def __init__(self, s: str):
+        self.s = s
+
+    def __repr__(self):
+        return self.s
+
 def findModelUnderstandingCheck() -> Dict[Expr, bool]:
     """Returns the result of findModel(Expr('a')) if lower cased expressions were allowed.
     You should not use findModel or Expr in this method.
@@ -97,14 +118,17 @@ def findModelUnderstandingCheck() -> Dict[Expr, bool]:
     a = Expr('A')
     "*** BEGIN YOUR CODE HERE ***"
     print("a.__dict__ is:", a.__dict__) # might be helpful for getting ideas
-    util.raiseNotDefined()
+    return {Mystr('a'):True}
     "*** END YOUR CODE HERE ***"
 
 def entails(premise: Expr, conclusion: Expr) -> bool:
     """Returns True if the premise entails the conclusion and False otherwise.
     """
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    dic = findModel(premise & ~conclusion)
+    if not dic:
+        return True
+    return False
     "*** END YOUR CODE HERE ***"
 
 def plTrueInverse(assignments: Dict[Expr, bool], inverse_statement: Expr) -> bool:
@@ -112,7 +136,7 @@ def plTrueInverse(assignments: Dict[Expr, bool], inverse_statement: Expr) -> boo
     pl_true may be useful here; see logic.py for its description.
     """
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return pl_true(~inverse_statement, assignments)
     "*** END YOUR CODE HERE ***"
 
 #______________________________________________________________________________
@@ -138,7 +162,7 @@ def atLeastOne(literals: List[Expr]) -> Expr:
     True
     """
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return disjoin(*list(map(lambda x: ~x if pl_true(x, {x: False}) else x, literals)))
     "*** END YOUR CODE HERE ***"
 
 
@@ -150,7 +174,9 @@ def atMostOne(literals: List[Expr]) -> Expr:
     itertools.combinations may be useful here.
     """
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    f = lambda x : x if pl_true(x, {x: False}) else ~x
+    expr = conjoin(*list(map(lambda x: disjoin(*list(map(f, x))), itertools.combinations(literals, 2))))
+    return expr
     "*** END YOUR CODE HERE ***"
 
 
@@ -161,7 +187,7 @@ def exactlyOne(literals: List[Expr]) -> Expr:
     the expressions in the list is true.
     """
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return atMostOne(literals) & atLeastOne(literals)
     "*** END YOUR CODE HERE ***"
 
 #______________________________________________________________________________
