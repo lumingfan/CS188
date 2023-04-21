@@ -420,7 +420,7 @@ def positionLogicPlan(problem) -> List:
     # loop to 50 timestamps
 
     for t in range(50):
-        print(f'now is time: {t}')
+        print(f'now time: {t}')
 
         # pacman possible location in timestamp t
         KB.append(exactlyOne([PropSymbolExpr(pacman_str, x, y, time=t) for x, y in non_wall_coords]))
@@ -429,12 +429,9 @@ def positionLogicPlan(problem) -> List:
                                   else ~PropSymbolExpr(pacman_str, pos[0], pos[1], time=t),
                               all_coords))
 
-        print(f'goal assertion: {goal_assertion}')
-        print(f'now knowlegde base: {KB}')
         # Is there a satisfying assignment for the variables give the KB so far
         model = findModel(conjoin(KB + goal_assertion))
         if model:
-            print(extractActionSequence(model, actions))
             return extractActionSequence(model, actions)
 
         # pacman possible action
@@ -465,6 +462,8 @@ def foodLogicPlan(problem) -> List:
     (x0, y0), food = problem.start
     food = food.asList()
 
+    print(food)
+
     # Get lists of possible locations (i.e. without walls) and possible actions
     all_coords = list(itertools.product(range(width + 2), range(height + 2)))
 
@@ -474,7 +473,41 @@ def foodLogicPlan(problem) -> List:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    # pacman initial position at time 0
+    KB.append(
+        conjoin(list(map(lambda pos: PropSymbolExpr(pacman_str, pos[0], pos[1], time=0) if pos == (x0, y0)
+                         else ~PropSymbolExpr(pacman_str, pos[0], pos[1], time=0),
+                         all_coords))))
+
+    # initial food sentence
+    KB.append(
+        conjoin(list(map(lambda pos: PropSymbolExpr(food_str, pos[0], pos[1], time=0) if pos in food
+                         else ~PropSymbolExpr(food_str, pos[0], pos[1], time=0),
+                         all_coords))))
+
+    # loop to 50 timestamps
+    for t in range(50):
+        print(f'now time: {t}')
+
+        # pacman possible location in timestamp t
+        KB.append(exactlyOne([PropSymbolExpr(pacman_str, x, y, time=t) for x, y in non_wall_coords]))
+
+        goal_assertion = [~PropSymbolExpr(food_str, x, y, time=t) for x, y in non_wall_coords]
+
+        # Is there a satisfying assignment for the variables give the KB so far
+        model = findModel(conjoin(KB + goal_assertion))
+        if model:
+            return extractActionSequence(model, actions)
+
+        # pacman possible action
+        KB.append(exactlyOne([PropSymbolExpr(action, time=t) for action in actions]))
+
+        # pacman transition model sentences
+        for x, y in non_wall_coords:
+            KB.append(pacmanSuccessorAxiomSingle(x, y, t + 1, walls))
+            KB.append(~PropSymbolExpr(food_str, x, y, time=t + 1) %
+                      (~PropSymbolExpr(food_str, x, y, time=t) | PropSymbolExpr(pacman_str, x, y, time=t)))
     "*** END YOUR CODE HERE ***"
 
 
@@ -494,9 +527,32 @@ def localization(problem, agent) -> Generator:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    # where the walls are and aren't
+    KB.append(conjoin(list(map(lambda pos: PropSymbolExpr(wall_str, pos[0], pos[1]) if pos in walls_list
+                               else ~PropSymbolExpr(wall_str, pos[0], pos[1]),
+                               all_coords))))
 
     for t in range(agent.num_timesteps):
+
+        # add pacman physics, action and percept information to KB
+        KB.append(pacphysicsAxioms(t, all_coords, non_outer_wall_coords,
+                                   walls_grid, sensorAxioms, allLegalSuccessorAxioms))
+
+        KB.append(PropSymbolExpr(agent.actions[t], time=t))
+        percepts = agent.getPercepts()
+        percept_rules = fourBitPerceptRules(t, percepts)
+        KB.append(percept_rules)
+
+        # add possible pacman position to KB
+        possible_locations = []
+        for x, y in non_outer_wall_coords:
+            if findModel(conjoin(KB + [PropSymbolExpr(pacman_str, x, y, time=t)])):
+                possible_locations.append((x, y))
+
+        # move to next state on the current agent action
+        agent.moveToNextState(agent.actions[t])
+
         "*** END YOUR CODE HERE ***"
         yield possible_locations
 
