@@ -327,7 +327,6 @@ def pacphysicsAxioms(t: int, all_coords: List[Tuple], non_outer_wall_coords: Lis
     "*** END YOUR CODE HERE ***"
 
     sentence = conjoin(pacphysics_sentences)
-    print(sentence)
     return sentence
 
 
@@ -383,7 +382,6 @@ def checkLocationSatisfiability(x1_y1: Tuple[int, int], x0_y0: Tuple[int, int], 
         else ~PropSymbolExpr(dir, time=1),
         DIRECTIONS))))
 
-    #print(findModel(conjoin(KB + [PropSymbolExpr(pacman_str, x1, y1, time=1)])))
     return (findModel(conjoin(KB + [PropSymbolExpr(pacman_str, x1, y1, time=1)])),
             findModel(conjoin(KB + [~PropSymbolExpr(pacman_str, x1, y1, time=1)])))
     "*** END YOUR CODE HERE ***"
@@ -413,7 +411,40 @@ def positionLogicPlan(problem) -> List:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # pacman initial position at time 0
+    KB.append(
+        conjoin(list(map(lambda pos: PropSymbolExpr(pacman_str, pos[0], pos[1], time=0) if pos == (x0, y0)
+                         else ~PropSymbolExpr(pacman_str, pos[0], pos[1], time=0),
+                         all_coords))))
+
+    # loop to 50 timestamps
+
+    for t in range(50):
+        print(f'now is time: {t}')
+
+        # pacman possible location in timestamp t
+        KB.append(exactlyOne([PropSymbolExpr(pacman_str, x, y, time=t) for x, y in non_wall_coords]))
+
+        goal_assertion = list(map(lambda pos: PropSymbolExpr(pacman_str, pos[0], pos[1], time=t) if pos == (xg, yg)
+                                  else ~PropSymbolExpr(pacman_str, pos[0], pos[1], time=t),
+                              all_coords))
+
+        print(f'goal assertion: {goal_assertion}')
+        print(f'now knowlegde base: {KB}')
+        # Is there a satisfying assignment for the variables give the KB so far
+        model = findModel(conjoin(KB + goal_assertion))
+        if model:
+            print(extractActionSequence(model, actions))
+            return extractActionSequence(model, actions)
+
+        # pacman possible action
+        KB.append(exactlyOne([PropSymbolExpr(action, time=t) for action in actions]))
+
+        # pacman transition model sentences
+        for x, y in non_wall_coords:
+            KB.append(pacmanSuccessorAxiomSingle(x, y, t + 1, walls_grid))
+
+
     "*** END YOUR CODE HERE ***"
 
 
