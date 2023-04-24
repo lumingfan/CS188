@@ -259,6 +259,13 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     """
       Your expectimax agent (question 4)
     """
+    def __init__(self, evalFn='scoreEvaluationFunction', depth='2'):
+        super().__init__(evalFn, depth)
+        self.maxState = 0
+        self.expState = 1
+        self.total_enemy = 0
+        self.MAX_SCORE = 99999.0
+        self.MIN_SCORE = -self.MAX_SCORE
 
     def getAction(self, gameState: GameState):
         """
@@ -267,8 +274,45 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         All ghosts should be modeled as choosing uniformly at random from their
         legal moves.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        self.total_enemy = gameState.getNumAgents() - 1
+
+        max_value = self.MIN_SCORE
+        ret_action = None
+
+        for action in gameState.getLegalActions(0):
+            value = self.getValue(gameState.generateSuccessor(0, action), self.expState, 1, 1)
+            if value > max_value:
+                max_value = value
+                ret_action = action
+
+        return ret_action
+
+    def getValue(self, gameState: GameState, nowState: int, depth: int, enemy: int):
+        if depth == self.depth + 1 or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        if nowState == self.expState:
+            return self.expValue(gameState, depth, enemy)
+        if nowState == self.maxState:
+            return self.maxValue(gameState, depth)
+
+    def maxValue(self, gameState: GameState, depth: int):
+        value = self.MIN_SCORE
+        for action in gameState.getLegalActions(0):
+            value = max(value, self.getValue(gameState.generateSuccessor(0, action), self.expState, depth, 1))
+        return value
+
+    def expValue(self, gameState: GameState, depth: int, enemy: int):
+        value = 0
+        nowState = self.expState
+
+        if enemy == self.total_enemy:
+            nowState = self.maxState
+            depth += 1
+
+        actions_number = len(gameState.getLegalActions(enemy))
+        for action in gameState.getLegalActions(enemy):
+            value += 1 / actions_number * self.getValue(gameState.generateSuccessor(enemy, action), nowState, depth, enemy + 1)
+        return value
 
 def betterEvaluationFunction(currentGameState: GameState):
     """
