@@ -120,6 +120,8 @@ class MinimaxAgent(MultiAgentSearchAgent):
         self.maxState = 0
         self.minState = 1
         self.total_enemy = 0
+        self.MAX_SCORE = 99999.0
+        self.MIN_SCORE = -self.MAX_SCORE
 
     def getAction(self, gameState: GameState):
         """
@@ -147,7 +149,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         "*** YOUR CODE HERE ***"
         self.total_enemy = gameState.getNumAgents() - 1
         ret_action = None
-        max_score = -99999
+        max_score = self.MIN_SCORE
         for action in gameState.getLegalActions(0):
             score = self.getValue(gameState.generateSuccessor(0, action), 1, self.minState, 1)
             if score > max_score:
@@ -165,13 +167,13 @@ class MinimaxAgent(MultiAgentSearchAgent):
             return self.minValue(gameState, depth, enemy)
 
     def maxValue(self, gameState: GameState, depth: int):
-        value = -99999
+        value = self.MIN_SCORE
         for action in gameState.getLegalActions(0):
             value = max(value, self.getValue(gameState.generateSuccessor(0, action), depth, self.minState, 1))
         return value
 
     def minValue(self, gameState: GameState, depth: int, enemy: int):
-        value = 99999
+        value = self.MAX_SCORE
         nowState = self.minState
 
         if enemy == self.total_enemy:
@@ -193,13 +195,65 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     """
     Your minimax agent with alpha-beta pruning (question 3)
     """
+    def __init__(self, evalFn='scoreEvaluationFunction', depth='2'):
+        super().__init__(evalFn, depth)
+        self.maxState = 0
+        self.minState = 1
+        self.total_enemy = 0
+        self.MAX_SCORE = 99999.0
+        self.MIN_SCORE = -self.MAX_SCORE
 
     def getAction(self, gameState: GameState):
         """
         Returns the minimax action using self.depth and self.evaluationFunction
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        self.total_enemy = gameState.getNumAgents() - 1
+        ret_action = None
+        max_score = self.MIN_SCORE
+        alpha = self.MIN_SCORE
+        beta = self.MAX_SCORE
+        for action in gameState.getLegalActions(0):
+            score = self.getValue(gameState.generateSuccessor(0, action), 1, self.minState, 1, alpha, beta)
+            if score > max_score:
+                max_score = score
+                ret_action = action
+
+            alpha = max(alpha, score)
+
+        return ret_action
+
+    def getValue(self, gameState: GameState, depth: int, nowState, enemy: int, alpha: float, beta: float):
+        if depth == self.depth + 1 or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        if nowState == self.maxState:
+            return self.maxValue(gameState, depth, alpha, beta)
+        if nowState == self.minState:
+            return self.minValue(gameState, depth, enemy, alpha, beta)
+
+    def maxValue(self, gameState: GameState, depth: int, alpha: float, beta: float):
+        value = self.MIN_SCORE
+        for action in gameState.getLegalActions(0):
+            value = max(value, self.getValue(gameState.generateSuccessor(0, action), depth, self.minState, 1, alpha, beta))
+            if value > beta:
+                return value
+            alpha = max(alpha, value)
+        return value
+
+    def minValue(self, gameState: GameState, depth: int, enemy: int, alpha: float, beta: float):
+        value = self.MAX_SCORE
+        nowState = self.minState
+
+        if enemy == self.total_enemy:
+            depth = depth + 1
+            nowState = self.maxState
+
+        for action in gameState.getLegalActions(enemy):
+            value = min(value, self.getValue(gameState.generateSuccessor(enemy, action), depth, nowState, enemy + 1, alpha, beta))
+            if value < alpha:
+                return value
+            beta = min(beta, value)
+
+        return value
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
