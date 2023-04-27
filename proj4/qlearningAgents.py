@@ -136,6 +136,8 @@ class QLearningAgent(ReinforcementAgent):
         if (state, action) not in self.Q_values:
             self.Q_values[(state, action)] = 0.0
 
+        # if now is terminal state, set the max_next_q_value to 0,
+        # in case of the estimated value influenced by self.MIN_VALUE
         if max_next_q_value == self.MIN_VALUE:
             max_next_q_value = 0
 
