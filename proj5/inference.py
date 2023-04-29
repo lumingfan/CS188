@@ -214,7 +214,6 @@ def inferenceByVariableEliminationWithCallTracking(callTrackingList=None):
             current_factors_list.append(joined_factor)
 
         # return normalized cpt
-
         return normalize(joinFactors(current_factors_list))
 
 
@@ -362,7 +361,11 @@ class DiscreteDistribution(dict):
         {}
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        total_value = self.total()
+        if abs(total_value) < 1e-5:
+            return
+        for key in self.keys():
+            self[key] = self[key] / total_value
         "*** END YOUR CODE HERE ***"
 
     def sample(self):
@@ -387,7 +390,13 @@ class DiscreteDistribution(dict):
         0.0
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        import random
+        sample_value = random.random() * self.total()
+        for key in self.keys():
+            if sample_value < self[key]:
+                return key
+            sample_value -= self[key]
+
         "*** END YOUR CODE HERE ***"
 
 
@@ -462,7 +471,21 @@ class InferenceModule:
         Return the probability P(noisyDistance | pacmanPosition, ghostPosition).
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # if the ghost is in jail
+        if ghostPosition == jailPosition:
+            # probability is 1 if noisyDistance is None
+            if noisyDistance is None:
+                return 1
+            # 0 else
+            return 0
+        # prob is 0 when ghost is not in jail but noisyDistance is None
+        if noisyDistance is None:
+            return 0
+
+        # calculate the P(noisyDistance | trueDistance)
+        probability = busters.getObservationProbability(noisyDistance, manhattanDistance(pacmanPosition, ghostPosition))
+        return probability
+
         "*** END YOUR CODE HERE ***"
 
     def setGhostPosition(self, gameState, ghostPosition, index):
