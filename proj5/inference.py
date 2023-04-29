@@ -568,12 +568,21 @@ class ExactInference(InferenceModule):
     The exact dynamic inference module should use forward algorithm updates to
     compute the exact belief function at each time step.
     """
+
+    def __init__(self, ghostAgent):
+        super().__init__(ghostAgent)
+        self.beliefs = None
+        self.new_ghost_pos_dict = None
+
     def initializeUniformly(self, gameState):
         """
         Begin with a uniform distribution over legal ghost positions (i.e., not
         including the jail position).
         """
         self.beliefs = DiscreteDistribution()
+        self.new_ghost_pos_dict = {}
+        for ghost_position in self.allPositions:
+            self.new_ghost_pos_dict[ghost_position] = self.getPositionDistribution(gameState, ghost_position)
         for p in self.legalPositions:
             self.beliefs[p] = 1.0
         self.beliefs.normalize()
@@ -620,7 +629,17 @@ class ExactInference(InferenceModule):
         current position is known.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        beliefs = self.beliefs.copy()
+        for ghostPos in self.allPositions:
+            probability = []
+            for nowPos, newPosDict in self.new_ghost_pos_dict.items():
+                if ghostPos in newPosDict.keys():
+                    probability.append(self.beliefs[nowPos] * newPosDict[ghostPos])
+            beliefs[ghostPos] = sum(probability)
+
+        for ghostPos in beliefs:
+            self.beliefs[ghostPos] = beliefs[ghostPos]
+        self.beliefs.normalize()
         "*** END YOUR CODE HERE ***"
 
     def getBeliefDistribution(self):
