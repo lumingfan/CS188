@@ -720,9 +720,8 @@ class ParticleFilter(InferenceModule):
         if distribution.total() == 0.0:
             self.initializeUniformly(gameState)
         else:
-            self.particles = []
             for idx in range(self.numParticles):
-                self.particles.append(distribution.sample())
+                self.particles[idx] = distribution.sample()
 
         "*** END YOUR CODE HERE ***"
     
@@ -736,5 +735,23 @@ class ParticleFilter(InferenceModule):
         gameState.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        new_position_dict = {}
+        for old_position in self.allPositions:
+            new_position_dict[old_position] = self.getPositionDistribution(gameState, old_position)
+
+        distribution = DiscreteDistribution()
+        old_distribution = self.getBeliefDistribution()
+        for ghost_position in self.allPositions:
+            probability = 0
+            for old_position, position_dict in new_position_dict.items():
+                if ghost_position in position_dict.keys():
+                    probability += old_distribution[old_position] * position_dict[ghost_position]
+            distribution[ghost_position] = probability
+
+        distribution.normalize()
+        if distribution.total() == 0.0:
+            self.initializeUniformly(gameState)
+        else:
+            for idx in range(self.numParticles):
+                self.particles[idx] = distribution.sample()
         "*** END YOUR CODE HERE ***"
