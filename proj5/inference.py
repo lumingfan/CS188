@@ -580,9 +580,7 @@ class ExactInference(InferenceModule):
         including the jail position).
         """
         self.beliefs = DiscreteDistribution()
-        self.new_ghost_pos_dict = {}
-        for ghost_position in self.allPositions:
-            self.new_ghost_pos_dict[ghost_position] = self.getPositionDistribution(gameState, ghost_position)
+
         for p in self.legalPositions:
             self.beliefs[p] = 1.0
         self.beliefs.normalize()
@@ -629,6 +627,9 @@ class ExactInference(InferenceModule):
         current position is known.
         """
         "*** YOUR CODE HERE ***"
+        self.new_ghost_pos_dict = {}
+        for ghost_position in self.allPositions:
+            self.new_ghost_pos_dict[ghost_position] = self.getPositionDistribution(gameState, ghost_position)
         beliefs = self.beliefs.copy()
         for ghostPos in self.allPositions:
             probability = []
