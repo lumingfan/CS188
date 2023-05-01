@@ -712,9 +712,10 @@ class ParticleFilter(InferenceModule):
         pacman_position = gameState.getPacmanPosition()
         jail_position = self.getJailPosition()
         distribution = DiscreteDistribution()
+        old_distribution = self.getBeliefDistribution()
 
-        for position in self.particles:
-            distribution[position] += self.getObservationProb(observation, pacman_position, position, jail_position)
+        for position in self.legalPositions:
+            distribution[position] = old_distribution[position] * self.getObservationProb(observation, pacman_position, position, jail_position)
 
         distribution.normalize()
         if distribution.total() == 0.0:
