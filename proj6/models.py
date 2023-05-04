@@ -244,6 +244,21 @@ class LanguageIDModel(object):
         # You can refer to self.num_chars or len(self.languages) in your code
         self.num_chars = 47
         self.languages = ["English", "Spanish", "Finnish", "Dutch", "Polish"]
+        self.hidden_layer_num = 3
+        self.hidden_layer_size = 300
+        self.batch_size = 150
+        self.alpha = 0.04
+
+        self.w = [nn.Parameter(self.hidden_layer_size, self.hidden_layer_size) for _ in range(self.hidden_layer_num)]
+        self.w.append(nn.Parameter(self.hidden_layer_size, 5))
+
+        self.bias = [nn.Parameter(1, self.hidden_layer_size) for _ in range(self.hidden_layer_num)]
+        self.bias.append(nn.Parameter(1, 5))
+
+        # initial weight, hidden weight, bias for RNN
+        self.initial_w = nn.Parameter(self.num_chars, self.hidden_layer_size)
+        self.hidden_w = nn.Parameter(self.hidden_layer_size, self.hidden_layer_size)
+        self.hidden_bias = nn.Parameter(1, self.hidden_layer_size)
 
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
@@ -278,6 +293,20 @@ class LanguageIDModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        h = None
+        for x in xs:
+            if not h:
+                h = nn.ReLU(nn.AddBias(nn.Linear(x, self.initial_w), self.hidden_bias))
+            else:
+                h = nn.ReLU(nn.Add(nn.AddBias(nn.Linear(x, self.initial_w), self.hidden_bias),
+                                   nn.AddBias(nn.Linear(h, self.hidden_w), self.hidden_bias)))
+
+        for layer_level in range(self.hidden_layer_num):
+            h = nn.Linear(h, self.w[layer_level])
+            h = nn.AddBias(h, self.bias[layer_level])
+            h = nn.ReLU(h)
+
+        return nn.AddBias(nn.Linear(h, self.w[self.hidden_layer_num]), self.bias[self.hidden_layer_num])
 
     def get_loss(self, xs, y):
         """
@@ -294,9 +323,31 @@ class LanguageIDModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SoftmaxLoss(self.run(xs), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        while True:
+            for xs, y in dataset.iterate_once(self.batch_size):
+                loss = self.get_loss(xs, y)
+
+                # append additional self.hidden_bias to make self.w and self.bias update easier:
+                #  self.w[layer_level].update(grad_list[(layer_level + 2) * 2], self.alpha)
+                parameter_list = [self.initial_w, self.hidden_w, self.hidden_bias, self.hidden_bias]
+                for layer_level in range(self.hidden_layer_num + 1):
+                    parameter_list.append(self.w[layer_level])
+                    parameter_list.append(self.bias[layer_level])
+
+                grad_list = nn.gradients(loss, parameter_list)
+                self.initial_w.update(grad_list[0], -self.alpha)
+                self.hidden_w.update(grad_list[1], -self.alpha)
+                self.hidden_bias.update(grad_list[2], -self.alpha)
+                for layer_level in range(self.hidden_layer_num + 1):
+                    self.w[layer_level].update(grad_list[(layer_level + 2) * 2], -self.alpha)
+                    self.bias[layer_level].update(grad_list[(layer_level + 2) * 2 + 1], -self.alpha)
+
+            if dataset.get_validation_accuracy() > 0.85:
+                break
