@@ -1,3 +1,5 @@
+import random
+
 import nn
 
 class PerceptronModel(object):
@@ -61,6 +63,18 @@ class RegressionModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        self.hidden_layer_size = 350
+        self.batch_size = 100
+        self.alpha = 0.08
+        self.hidden_layer_num = 8
+
+        self.w = [nn.Parameter(self.hidden_layer_size, self.hidden_layer_size) for _ in range(self.hidden_layer_num)]
+        self.w[0] = nn.Parameter(1, self.hidden_layer_size)
+        self.w.append(nn.Parameter(self.hidden_layer_size, 1))
+
+        self.bias = [nn.Parameter(1, self.hidden_layer_size) for _ in range(self.hidden_layer_num)]
+        self.bias[0] = nn.Parameter(1, self.hidden_layer_size)
+        self.bias.append(nn.Parameter(1, 1))
 
     def run(self, x):
         """
@@ -72,6 +86,11 @@ class RegressionModel(object):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
+        for layer_num in range(self.hidden_layer_num):
+            x = nn.Linear(x, self.w[layer_num])
+            x = nn.AddBias(x, self.bias[layer_num])
+            x = nn.ReLU(x)
+        return nn.AddBias(nn.Linear(x, self.w[self.hidden_layer_num]), self.bias[self.hidden_layer_num])
 
     def get_loss(self, x, y):
         """
@@ -84,12 +103,34 @@ class RegressionModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SquareLoss(self.run(x), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        while True:
+            total_loss_scalar = 0
+            for x, y in dataset.iterate_once(self.batch_size):
+                loss = self.get_loss(x, y)
+                loss_scalar = nn.as_scalar(loss)
+
+                parameter_list = []
+                for layer_level in range(self.hidden_layer_num + 1):
+                    parameter_list.append(self.w[layer_level])
+                    parameter_list.append(self.bias[layer_level])
+
+                grad_list = nn.gradients(loss, parameter_list)
+                for layer_level in range(self.hidden_layer_num + 1):
+                    self.w[layer_level].update(grad_list[layer_level * 2], -self.alpha)
+                    self.bias[layer_level].update(grad_list[layer_level * 2 + 1], -self.alpha)
+
+                total_loss_scalar += loss_scalar
+
+            if total_loss_scalar < 0.02:
+                break
+
 
 class DigitClassificationModel(object):
     """
