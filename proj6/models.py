@@ -157,6 +157,17 @@ class DigitClassificationModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        self.hidden_layer_size = 200
+        self.hidden_layer_num = 2
+        self.batch_size = 100
+        self.alpha = 0.4
+
+        self.w = [nn.Parameter(self.hidden_layer_size, self.hidden_layer_size) for _ in range(self.hidden_layer_num)]
+        self.w[0] = nn.Parameter(784, self.hidden_layer_size)
+        self.w.append(nn.Parameter(self.hidden_layer_size, 10))
+
+        self.bias = [nn.Parameter(1, self.hidden_layer_size) for _ in range(self.hidden_layer_num)]
+        self.bias.append(nn.Parameter(1, 10))
 
     def run(self, x):
         """
@@ -173,6 +184,12 @@ class DigitClassificationModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        for layer_level in range(self.hidden_layer_num):
+            x = nn.Linear(x, self.w[layer_level])
+            x = nn.AddBias(x, self.bias[layer_level])
+            x = nn.ReLU(x)
+
+        return nn.AddBias(nn.Linear(x, self.w[self.hidden_layer_num]), self.bias[self.hidden_layer_num])
 
     def get_loss(self, x, y):
         """
@@ -188,12 +205,29 @@ class DigitClassificationModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SoftmaxLoss(self.run(x), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        while True:
+            for x, y in dataset.iterate_once(self.batch_size):
+                loss = self.get_loss(x, y)
+
+                parameter_list = []
+                for layer_level in range(self.hidden_layer_num + 1):
+                    parameter_list.append(self.w[layer_level])
+                    parameter_list.append(self.bias[layer_level])
+
+                grad_list = nn.gradients(loss, parameter_list)
+                for layer_level in range(self.hidden_layer_num + 1):
+                    self.w[layer_level].update(grad_list[layer_level * 2], -self.alpha)
+                    self.bias[layer_level].update(grad_list[layer_level * 2 + 1], -self.alpha)
+
+            if dataset.get_validation_accuracy() >= 0.98:
+                break
 
 class LanguageIDModel(object):
     """
