@@ -63,15 +63,21 @@ class RegressionModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        # hyper parameter
         self.hidden_layer_size = 350
         self.batch_size = 100
         self.alpha = 0.08
         self.hidden_layer_num = 8
 
+        # one weight each layer level
+        # first layer weight's shape will be (col of input, num of perceptron)
+        # second to last bust one layer weight's shape will be (num of perceptron, num of perceptron)
+        # last layer weight's shape will be (num of perceptron, 1) to make the output be (batch, col of input)
         self.w = [nn.Parameter(self.hidden_layer_size, self.hidden_layer_size) for _ in range(self.hidden_layer_num)]
         self.w[0] = nn.Parameter(1, self.hidden_layer_size)
         self.w.append(nn.Parameter(self.hidden_layer_size, 1))
 
+        # one bias each layer level
         self.bias = [nn.Parameter(1, self.hidden_layer_size) for _ in range(self.hidden_layer_num)]
         self.bias[0] = nn.Parameter(1, self.hidden_layer_size)
         self.bias.append(nn.Parameter(1, 1))
@@ -116,6 +122,7 @@ class RegressionModel(object):
                 loss = self.get_loss(x, y)
                 loss_scalar = nn.as_scalar(loss)
 
+                # all parameter need to gradient
                 parameter_list = []
                 for layer_level in range(self.hidden_layer_num + 1):
                     parameter_list.append(self.w[layer_level])
@@ -123,6 +130,7 @@ class RegressionModel(object):
 
                 grad_list = nn.gradients(loss, parameter_list)
                 for layer_level in range(self.hidden_layer_num + 1):
+                    # gradient descent
                     self.w[layer_level].update(grad_list[layer_level * 2], -self.alpha)
                     self.bias[layer_level].update(grad_list[layer_level * 2 + 1], -self.alpha)
 
